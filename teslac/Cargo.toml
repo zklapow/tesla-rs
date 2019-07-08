@@ -6,6 +6,7 @@ edition = "2018"
 repository = "https://github.com/zklapow/tesla-rs"
 keywords = ["tesla", "api"]
 categories = ["command-line-utilities"]
+license = "MIT"
 
 [dependencies]
 tesla = { path = "../tesla", version = "0.1"}
