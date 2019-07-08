@@ -1,8 +1,11 @@
 [package]
 name = "teslac"
 version = "0.1.0"
-authors = ["Ze'ev Klapow <zklapow@hubspot.com>"]
+authors = ["Ze'ev Klapow <zklapow@gmail.com>"]
 edition = "2018"
+repository = "https://github.com/zklapow/tesla-rs"
+keywords = ["tesla", "api"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 tesla = { path = "../tesla", version = "0.1"}
