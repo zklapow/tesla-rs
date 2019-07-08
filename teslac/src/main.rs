@@ -23,5 +23,11 @@ fn main() {
     let vehicles = client.get_vehicles().expect("Cannot fetch vehicles");
 
     println!("Vehicles: {:?}", vehicles);
+
+    let atas = vehicles.get(0).expect("No vehicle");
+    let atas_client = client.use_vehicle(atas.id);
+    let soc = atas_client.get_soc();
+
+    println!("SOC: {:?}", soc);
 }
 
