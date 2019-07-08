@@ -5,7 +5,7 @@ authors = ["Ze'ev Klapow <zklapow@hubspot.com>"]
 edition = "2018"
 
 [dependencies]
-tesla = { path = "../tesla" }
+tesla = { path = "../tesla", version = "0.1"}
 toml = "0.5"
 serde = "~1.0"
 dirs = "2.0"
