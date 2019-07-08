@@ -7,6 +7,7 @@ repository = "https://github.com/zklapow/tesla-rs"
 keywords = ["tesla", "api"]
 categories = ["api-bindings"]
 license = "MIT"
+description = "A simple client library for interacting with the Tesla owner API"
 
 [dependencies]
 serde = "~1.0"
