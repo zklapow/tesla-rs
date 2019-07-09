@@ -1,24 +1,48 @@
 use std::fs;
+use std::path::PathBuf;
 
-use clap::{App, Arg, SubCommand, ArgMatches};
+use clap::{App, Arg, ArgMatches, SubCommand};
 use dirs::home_dir;
 use serde::Deserialize;
 
-use tesla::{TeslaClient, VehicleClient, Vehicle};
+use tesla::{TeslaClient, Vehicle, VehicleClient};
 use tesla::reqwest;
-use std::path::PathBuf;
+use flexi_logger::LogSpecification;
+
+#[macro_use]
+extern crate log;
 
 #[derive(Debug, Deserialize)]
 struct Config {
     global: GlobalConfig,
+    influx: Option<InfluxConfig>,
 }
 
 #[derive(Debug, Deserialize)]
 struct GlobalConfig {
     api_token: String,
+    default_vehicle: Option<String>,
+    logspec: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct InfluxConfig {
+    enabled: bool,
+    url: Option<String>,
+    user: Option<String>,
+    password: Option<String>,
 }
 
 fn main() {
+
+
+    std::process::exit(match run() {
+        Ok(_) => 0,
+        Err(_) => 1
+    });
+}
+
+fn run() -> Result<(), ()> {
     let matches = App::new("Tesla Control")
         .version("0.1.0")
         .author("Ze'ev Klapow <zklapow@gmail.com>")
@@ -31,15 +55,20 @@ fn main() {
                 .help("Sets a custom config file path")
                 .takes_value(true)
         )
+        .arg(
+            Arg::with_name("vehicle")
+                .long("vehicle")
+                .short("V")
+                .help("Name of vehicle to awaken")
+                .takes_value(true)
+        )
         .subcommand(
             SubCommand::with_name("wake")
                 .about("wake up the specified vehicle")
-                .arg(
-                    Arg::with_name("vehicle")
-                        .help("Name of vehicle to awaken")
-                        .required(true)
-                        .index(1)
-                )
+        )
+        .subcommand(
+            SubCommand::with_name("influx")
+                .about("Start the influxdb reporter")
         )
         .get_matches();
 
@@ -55,43 +84,37 @@ fn main() {
     let cfg: Config = toml::from_str(config_data.as_str()).expect("Cannot parse config");
     let client = TeslaClient::default(cfg.global.api_token.as_str());
 
-    if let Some(submatches) = matches.subcommand_matches("wake") {
-        cmd_wake(submatches, client.clone());
+    flexi_logger::Logger::with_env_or_str(cfg.global.logspec.unwrap_or("".to_owned()))
+        .format(flexi_logger::colored_with_thread)
+        .start()
+        .unwrap();
+
+    let vehicle_name = matches.value_of("vehicle")
+        .map(|s| s.to_owned())
+        .or(cfg.global.default_vehicle);
+
+    if vehicle_name.is_none() {
+        error!("No default vehicle and no vehicle specified, aborting.");
+        return Err(());
     }
 
-//    let vehicles = client.get_vehicles().expect("Cannot fetch vehicles");
-//
-//    println!("Vehicles: {:?}", vehicles);
-//
-//    let atas = vehicles.get(0).expect("No vehicle");
-//    let atas_client: VehicleClient = client.vehicle(atas.id);
-//
-//    let atas = atas_client.get();
-//    println!("Vehicle state: {:?}", atas);
-//
-////    if atas.state.to_lowercase() == "offline" {
-////        println!("Waking vehicle");
-////        atas_client.wake_up();
-////    }
-//
-//    let data = atas_client.get_all_data();
-//
-//    println!("Data: {:?}", data);
+    if let Some(submatches) = matches.subcommand_matches("wake") {
+        cmd_wake(submatches, vehicle_name.unwrap(), client.clone());
+    }
+
+    Ok(())
 }
 
-fn cmd_wake(matches: &ArgMatches, client: TeslaClient) {
-    // This arg is required, ok to unwrap
-    let name = matches.value_of("vehicle").unwrap();
-
-    if let Some(vehicle) = find_vehicle_by_name(&client, name).expect("Could not load vehicles") {
+fn cmd_wake(matches: &ArgMatches, name: String, client: TeslaClient) {
+    if let Some(vehicle) = find_vehicle_by_name(&client, name.as_str()).expect("Could not load vehicles") {
         let vclient = client.vehicle(vehicle.id);
-        println!("Waking up");
+        info!("Waking up");
         match vclient.wake_up() {
-            Ok(_) => println!("Sent wakeup command to {}", name),
-            Err(e) => println!("Wake up failed {:?}", e)
+            Ok(_) => info!("Sent wakeup command to {}", name),
+            Err(e) => error!("Wake up failed {:?}", e)
         }
     } else {
-        println!("Could not find vehicle named {}", name);
+        error!("Could not find vehicle named {}", name);
     }
 }
 
