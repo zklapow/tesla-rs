@@ -1,6 +1,8 @@
 use reqwest::Client;
 use reqwest::header;
 
+pub use reqwest;
+
 pub use models::*;
 
 mod models;
