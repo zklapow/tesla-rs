@@ -1,7 +1,7 @@
 use std::fs;
 use dirs::home_dir;
 
-use tesla::TeslaClient;
+use tesla::{TeslaClient, VehicleClient};
 
 use serde::Deserialize;
 
@@ -25,9 +25,18 @@ fn main() {
     println!("Vehicles: {:?}", vehicles);
 
     let atas = vehicles.get(0).expect("No vehicle");
-    let atas_client = client.use_vehicle(atas.id);
-    let soc = atas_client.get_soc();
+    let atas_client: VehicleClient = client.vehicle(atas.id);
 
-    println!("SOC: {:?}", soc);
+    let atas = atas_client.get();
+    println!("Vehicle state: {:?}", atas);
+
+//    if atas.state.to_lowercase() == "offline" {
+//        println!("Waking vehicle");
+//        atas_client.wake_up();
+//    }
+
+    let data = atas_client.get_all_data();
+
+    println!("Data: {:?}", data);
 }
 

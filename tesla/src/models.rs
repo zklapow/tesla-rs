@@ -9,6 +9,7 @@ pub struct Vehicle {
     pub display_name: String,
     pub state: String,
     pub id_s: String,
+    pub tokens: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -20,6 +21,22 @@ pub struct StateOfCharge {
     pub ideal_battery_range: f32,
     pub usable_battery_level: u32
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct VehicleState {
+    pub odometer: f64,
+    pub sentry_mode: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct FullVehicleData {
+    pub id: u64,
+    pub user_id: u64,
+    pub vehicle_id: u64,
+    pub state: String,
+    pub charge_state: StateOfCharge,
+}
+
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ResponseArray<T> {

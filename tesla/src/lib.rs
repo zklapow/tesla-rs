@@ -10,12 +10,23 @@ const ENDPOINT_GET_VEHICLES: &str = "vehicles";
 const ENDPOINT_GET_VEHICLE: &str = "vehicles/{}";
 
 const VEHICLE_CHARGE_STATE: &str = "data_request/charge_state";
+const VEHICLE_DATA: &str = "vehicle_data";
+const VEHICLE_COMMAND_WAKE: &str = "wake_up";
 
+// We expect here because this is parsing a const and will not fail
+macro_rules! endpoint_url {
+    ($client: ident, $e:expr) => {
+        $client.get_base_url().join($e).expect("cannot parse endpoint")
+    }
+}
+
+#[derive(Clone)]
 pub struct TeslaClient {
     pub api_root: url::Url,
     client: Client,
 }
 
+#[derive(Clone)]
 pub struct VehicleClient {
     tesla_client: TeslaClient,
     vehicle_id: u64,
@@ -44,17 +55,15 @@ impl TeslaClient {
         }
     }
 
-    pub fn use_vehicle(self, vehicle_id: u64) -> VehicleClient {
+    pub fn vehicle(&self, vehicle_id: u64) -> VehicleClient {
         VehicleClient {
-            tesla_client: self,
+            tesla_client: self.clone(),
             vehicle_id
         }
     }
 
     pub fn get_vehicles(&self) -> Result<Vec<Vehicle>, reqwest::Error> {
-        let url = self.api_root
-            .join(ENDPOINT_GET_VEHICLES)
-            .expect("Cannot parse endpoint");
+        let url = endpoint_url!(self, ENDPOINT_GET_VEHICLES);
 
         let vehicle_response: ResponseArray<Vehicle> = self.client.get(url)
             .send()?
@@ -62,13 +71,45 @@ impl TeslaClient {
 
         Ok(vehicle_response.into_response())
     }
+
+    fn get_base_url(&self) -> url::Url {
+        self.api_root.clone()
+    }
 }
 
 impl VehicleClient {
-    pub fn get_soc(&self) -> Result<StateOfCharge, reqwest::Error> {
-        let url = self.get_base_url().join(VEHICLE_CHARGE_STATE).expect("cannot parse endpoint");
+    pub fn wake_up(&self) -> Result<Vehicle, reqwest::Error> {
+        let url = endpoint_url!(self, VEHICLE_COMMAND_WAKE);
 
-        let mut resp: Response<StateOfCharge> = self.tesla_client.client.get(url)
+        let resp: Response<Vehicle> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn get(&self) -> Result<Vehicle, reqwest::Error> {
+        let resp: Response<Vehicle> = self.tesla_client.client.get(self.get_base_url())
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn get_all_data(&self) -> Result<FullVehicleData, reqwest::Error> {
+        let url = endpoint_url!(self, VEHICLE_DATA);
+
+        let resp: Response<FullVehicleData> = self.tesla_client.client.get(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn get_soc(&self) -> Result<StateOfCharge, reqwest::Error> {
+        let url = endpoint_url!(self, VEHICLE_CHARGE_STATE);
+
+        let resp: Response<StateOfCharge> = self.tesla_client.client.get(url)
             .send()?
             .json()?;
 
@@ -85,6 +126,7 @@ impl VehicleClient {
             .expect("invalide vehicle path")
     }
 }
+
 
 #[cfg(test)]
 mod tests {
