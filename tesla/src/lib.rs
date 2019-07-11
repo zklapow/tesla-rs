@@ -74,6 +74,13 @@ impl TeslaClient {
         Ok(vehicle_response.into_response())
     }
 
+    pub fn get_vehicle_by_name(&self, name: &str) -> Result<Option<Vehicle>, reqwest::Error> {
+        let vehicle = self.get_vehicles()?.into_iter()
+            .find(|v| v.display_name.to_lowercase() == name.to_lowercase());
+
+        Ok(vehicle)
+    }
+
     fn get_base_url(&self) -> url::Url {
         self.api_root.clone()
     }

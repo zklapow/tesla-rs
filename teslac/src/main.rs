@@ -1,41 +1,28 @@
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate influx_db_client;
+
 use std::fs;
 use std::path::PathBuf;
+use std::thread::sleep;
+use std::time::Duration;
 
 use clap::{App, Arg, ArgMatches, SubCommand};
 use dirs::home_dir;
+use flexi_logger::LogSpecification;
 use serde::Deserialize;
 
 use tesla::{TeslaClient, Vehicle, VehicleClient};
 use tesla::reqwest;
-use flexi_logger::LogSpecification;
 
-#[macro_use]
-extern crate log;
+use crate::config::Config;
+use crate::influx::run_influx_reporter;
 
-#[derive(Debug, Deserialize)]
-struct Config {
-    global: GlobalConfig,
-    influx: Option<InfluxConfig>,
-}
-
-#[derive(Debug, Deserialize)]
-struct GlobalConfig {
-    api_token: String,
-    default_vehicle: Option<String>,
-    logspec: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct InfluxConfig {
-    enabled: bool,
-    url: Option<String>,
-    user: Option<String>,
-    password: Option<String>,
-}
+mod config;
+mod influx;
 
 fn main() {
-
-
     std::process::exit(match run() {
         Ok(_) => 0,
         Err(_) => 1
@@ -60,15 +47,38 @@ fn run() -> Result<(), ()> {
                 .long("vehicle")
                 .short("V")
                 .help("Name of vehicle to awaken")
+                .global(true)
                 .takes_value(true)
         )
         .subcommand(
             SubCommand::with_name("wake")
                 .about("wake up the specified vehicle")
+                .arg(
+                    Arg::with_name("await")
+                        .help("Wait for vehicle to awaken")
+                        .long("await")
+                        .short("a")
+                        .takes_value(false)
+                )
+                .arg(
+                    Arg::with_name("poll-interval")
+                        .help("How quickly to poll the vehicle (in seconds)")
+                        .long("poll-interval")
+                        .short("p")
+                        .takes_value(true)
+                        .default_value("5")
+                )
         )
         .subcommand(
             SubCommand::with_name("influx")
                 .about("Start the influxdb reporter")
+                .arg(
+                    Arg::with_name("daemon")
+                        .help("Daemonize the reporter process")
+                        .long("daemon")
+                        .short("d")
+                        .takes_value(false)
+                )
         )
         .get_matches();
 
@@ -97,30 +107,51 @@ fn run() -> Result<(), ()> {
         error!("No default vehicle and no vehicle specified, aborting.");
         return Err(());
     }
+    let vehicle_name = vehicle_name.unwrap();
 
     if let Some(submatches) = matches.subcommand_matches("wake") {
-        cmd_wake(submatches, vehicle_name.unwrap(), client.clone());
+        cmd_wake(submatches, vehicle_name, client.clone());
+    } else if let Some(submatches) = matches.subcommand_matches("influx") {
+        if cfg.influx.is_none() {
+            error!("No influx configuration present, cannot start influx reporter!");
+            return Err(());
+        }
+
+        run_influx_reporter(cfg.influx.unwrap(), vehicle_name, client.clone());
     }
 
     Ok(())
 }
 
 fn cmd_wake(matches: &ArgMatches, name: String, client: TeslaClient) {
-    if let Some(vehicle) = find_vehicle_by_name(&client, name.as_str()).expect("Could not load vehicles") {
+    if let Some(vehicle) = client.get_vehicle_by_name(name.as_str()).expect("Could not load vehicles") {
         let vclient = client.vehicle(vehicle.id);
         info!("Waking up");
         match vclient.wake_up() {
             Ok(_) => info!("Sent wakeup command to {}", name),
             Err(e) => error!("Wake up failed {:?}", e)
         }
+
+        if matches.is_present("await") {
+            info!("Waiting for {} to wake up.", name);
+            let sleep_dur_s = Duration::from_secs(
+                matches.value_of("poll-interval").unwrap().parse::<u64>()
+                    .expect("Could not parse poll interval")
+            );
+
+            loop {
+                if let Some(vehicle) = vclient.get().ok() {
+                    if vehicle.state == "online" {
+                        break;
+                    } else {
+                        debug!("{} is not yet online (current state is {}), waiting.", name, vehicle.state);
+                    }
+                }
+
+                sleep(sleep_dur_s);
+            }
+        }
     } else {
         error!("Could not find vehicle named {}", name);
     }
-}
-
-fn find_vehicle_by_name(client: &TeslaClient, name: &str) -> Result<Option<Vehicle>, reqwest::Error> {
-    let vehicle = client.get_vehicles()?.into_iter()
-        .find(|v| v.display_name.to_lowercase() == name.to_lowercase());
-
-    Ok(vehicle)
 }
