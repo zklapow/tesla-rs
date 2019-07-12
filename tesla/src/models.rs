@@ -15,10 +15,11 @@ pub struct Vehicle {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StateOfCharge {
     pub battery_level: u32,
-    pub battery_range: f32,
+    pub battery_range: f64,
     pub charge_current_request: u32,
     pub charge_current_request_max: u32,
-    pub ideal_battery_range: f32,
+    pub ideal_battery_range: f64,
+    pub est_battery_range: f64,
     pub usable_battery_level: u32
 }
 
@@ -35,6 +36,7 @@ pub struct FullVehicleData {
     pub vehicle_id: u64,
     pub state: String,
     pub charge_state: StateOfCharge,
+    pub vehicle_state: VehicleState,
 }
 
 

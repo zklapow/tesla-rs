@@ -7,7 +7,7 @@ use influx_db_client::{InfluxClient, Point, Points, Precision, Value};
 use influx_db_client::Error as InfluxError;
 use snafu::ResultExt;
 
-use tesla::{TeslaClient, Vehicle, VehicleClient, StateOfCharge};
+use tesla::{TeslaClient, Vehicle, VehicleClient, StateOfCharge, VehicleState};
 
 use crate::config::InfluxConfig;
 use crate::error::{Error, TeslaApi, InfluxWrite};
@@ -65,15 +65,29 @@ fn report_online(client: &VehicleClient, vehicle: &Vehicle, influx: &InfluxClien
     let all_data = client.get_all_data().context(TeslaApi)?;
 
     report_soc(vehicle, &all_data.charge_state, influx)?;
+    report_odo(vehicle, &all_data.vehicle_state, influx)?;
 
     Ok(())
+}
+
+fn report_odo(vehicle: &Vehicle, vehicle_state: &VehicleState, client: &InfluxClient) -> Result<(), Error> {
+    let mut odo: Point = point!("odometer");
+
+    odo.add_field("value", Value::Float(vehicle_state.odometer));
+
+    add_vehicle_tags(&mut odo, vehicle);
+
+    client.write_point(odo, Some(Precision::Milliseconds), None)
+        .context(InfluxWrite)
 }
 
 fn report_soc(vehicle: &Vehicle, charge_state: &StateOfCharge, client: &InfluxClient) -> Result<(), Error> {
     let mut battery: Point = point!("battery");
 
     battery.add_field("level", Value::Integer(charge_state.battery_level as i64));
-    battery.add_field("range", Value::Float(charge_state.battery_range as f64));
+    battery.add_field("range", Value::Float(charge_state.battery_range));
+    battery.add_field("range-ideal", Value::Float(charge_state.ideal_battery_range));
+    battery.add_field("range-est", Value::Float(charge_state.est_battery_range));
 
     add_vehicle_tags(&mut battery, vehicle);
 
