@@ -13,10 +13,11 @@ pub struct GlobalConfig {
     pub logspec: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct InfluxConfig {
     pub url: Option<String>,
     pub user: Option<String>,
     pub password: Option<String>,
-    pub database: Option<String>
+    pub database: Option<String>,
+    pub interval: Option<u64>
 }

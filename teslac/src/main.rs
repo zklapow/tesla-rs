@@ -10,17 +10,16 @@ use std::time::Duration;
 
 use clap::{App, Arg, ArgMatches, SubCommand};
 use dirs::home_dir;
-use flexi_logger::LogSpecification;
-use serde::Deserialize;
 
 use tesla::{TeslaClient, Vehicle, VehicleClient};
-use tesla::reqwest;
 
 use crate::config::Config;
 use crate::influx::run_influx_reporter;
+use std::process::exit;
 
 mod config;
 mod influx;
+mod error;
 
 fn main() {
     std::process::exit(match run() {
@@ -117,7 +116,10 @@ fn run() -> Result<(), ()> {
             return Err(());
         }
 
-        run_influx_reporter(cfg.influx.unwrap(), vehicle_name, client.clone());
+        if let Err(e) = run_influx_reporter(cfg.influx.unwrap(), vehicle_name, client.clone()) {
+            error!("Error in influx reporter: {}", e);
+            exit(1);
+        }
     }
 
     Ok(())
