@@ -3,6 +3,7 @@ image: ubuntu/lts
 packages:
   - curl
   - libssl-dev
+  - pkg-config
 
 sources:
   - https://github.com/zklapow/tesla-rs.git
