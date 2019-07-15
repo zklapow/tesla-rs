@@ -7,7 +7,7 @@ use influx_db_client::{InfluxClient, Point, Points, Precision, Value};
 use influx_db_client::Error as InfluxError;
 use snafu::ResultExt;
 
-use tesla::{TeslaClient, Vehicle, VehicleClient, StateOfCharge, VehicleState};
+use tesla::{TeslaClient, Vehicle, VehicleClient, StateOfCharge, VehicleState, ClimateState, DriveState};
 
 use crate::config::InfluxConfig;
 use crate::error::{Error, TeslaApi, InfluxWrite};
@@ -33,11 +33,11 @@ pub fn run_influx_reporter(cfg: InfluxConfig, vehicle_name: String, client: Tesl
     let mut  next_poll_time = Instant::now();
     while running.load(Ordering::SeqCst) {
         if Instant::now() > next_poll_time {
+            debug!("Reporting to influx");
             check_and_report(&vclient, &influxc)?;
 
             next_poll_time = Instant::now() + Duration::from_secs(poll_duration);
         }
-        debug!("Reporting to influx");
 
         sleep(Duration::from_millis(poll_duration));
     }
@@ -54,6 +54,9 @@ fn check_and_report(client: &VehicleClient, influx: &InfluxClient) -> Result<(),
         "online" => {
             report_online(client, &state, influx)
         },
+        "offline" | "asleep" => {
+            Ok(())
+        },
         _ => {
             Err(Error::UnknownState { state: state.state })
         }
@@ -63,11 +66,33 @@ fn check_and_report(client: &VehicleClient, influx: &InfluxClient) -> Result<(),
 fn report_online(client: &VehicleClient, vehicle: &Vehicle, influx: &InfluxClient) -> Result<(), Error> {
     info!("Vehicle is online, reporting full data to influx");
     let all_data = client.get_all_data().context(TeslaApi)?;
+    debug!("Fetched all vehicle data: {:?}", all_data);
 
     report_soc(vehicle, &all_data.charge_state, influx)?;
     report_odo(vehicle, &all_data.vehicle_state, influx)?;
+    report_temp(vehicle, &all_data.climate_state, influx)?;
+    report_loc(vehicle, &all_data.drive_state, influx)?;
 
     Ok(())
+}
+
+fn report_loc(vehicle: &Vehicle, drive_state: &DriveState, client: &InfluxClient) -> Result<(), Error> {
+    let mut loc: Point = point!("location");
+
+    loc.add_field("latitude", Value::Float(drive_state.latitude));
+    loc.add_field("longitude", Value::Float(drive_state.longitude));
+    loc.add_field("heading", Value::Integer(drive_state.heading as i64));
+
+    write_point(loc, vehicle, client)
+}
+
+fn report_temp(vehicle: &Vehicle, climate_state: &ClimateState, client: &InfluxClient) -> Result<(), Error> {
+    let mut temp: Point = point!("temperature");
+
+    temp.add_field("inside", Value::Float(climate_state.inside_temp));
+    temp.add_field("outside", Value::Float(climate_state.outside_temp));
+
+    write_point(temp, vehicle, client)
 }
 
 fn report_odo(vehicle: &Vehicle, vehicle_state: &VehicleState, client: &InfluxClient) -> Result<(), Error> {
@@ -75,10 +100,7 @@ fn report_odo(vehicle: &Vehicle, vehicle_state: &VehicleState, client: &InfluxCl
 
     odo.add_field("value", Value::Float(vehicle_state.odometer));
 
-    add_vehicle_tags(&mut odo, vehicle);
-
-    client.write_point(odo, Some(Precision::Milliseconds), None)
-        .context(InfluxWrite)
+    write_point(odo, vehicle, client)
 }
 
 fn report_soc(vehicle: &Vehicle, charge_state: &StateOfCharge, client: &InfluxClient) -> Result<(), Error> {
@@ -89,10 +111,7 @@ fn report_soc(vehicle: &Vehicle, charge_state: &StateOfCharge, client: &InfluxCl
     battery.add_field("range-ideal", Value::Float(charge_state.ideal_battery_range));
     battery.add_field("range-est", Value::Float(charge_state.est_battery_range));
 
-    add_vehicle_tags(&mut battery, vehicle);
-
-    client.write_point(battery, Some(Precision::Milliseconds), None)
-        .context(InfluxWrite)
+    write_point(battery, vehicle, client)
 }
 
 fn report_state(state: &Vehicle, client: &InfluxClient) -> Result<(), Error> {
@@ -101,9 +120,13 @@ fn report_state(state: &Vehicle, client: &InfluxClient) -> Result<(), Error> {
     meas.add_field("value", Value::String(state.state.clone()));
     meas.add_field("online", Value::Boolean(state_bool));
 
-    add_vehicle_tags(&mut meas, &state);
+    write_point(meas, state, client)
+}
 
-    client.write_point(meas, Some(Precision::Milliseconds), None)
+fn write_point(mut point: Point, vehicle: &Vehicle, client: &InfluxClient) -> Result<(), Error> {
+    add_vehicle_tags(&mut point, &vehicle);
+
+    client.write_point(point, Some(Precision::Milliseconds), None)
         .context(InfluxWrite)
 }
 

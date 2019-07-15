@@ -30,6 +30,22 @@ pub struct VehicleState {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct DriveState {
+    pub gps_as_of: u64,
+    pub heading: u32,
+    pub latitude: f64,
+    pub longitude: f64,
+    pub power: f64,
+    pub timestamp: u64
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ClimateState {
+    pub inside_temp: f64,
+    pub outside_temp: f64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct FullVehicleData {
     pub id: u64,
     pub user_id: u64,
@@ -37,8 +53,9 @@ pub struct FullVehicleData {
     pub state: String,
     pub charge_state: StateOfCharge,
     pub vehicle_state: VehicleState,
+    pub drive_state: DriveState,
+    pub climate_state: ClimateState,
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ResponseArray<T> {

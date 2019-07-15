@@ -11,7 +11,7 @@ use std::time::Duration;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use dirs::home_dir;
 
-use tesla::{TeslaClient, Vehicle, VehicleClient};
+use tesla::{TeslaClient};
 
 use crate::config::Config;
 use crate::influx::run_influx_reporter;

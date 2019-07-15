@@ -1,0 +1,17 @@
+image: ubuntu/lts
+
+packages:
+  - curl
+
+sources:
+  - https://github.com/zklapow/tesla-rs.git
+
+tasks:
+  - setup: |
+      curl https://sh.rustup.rs -sSf | sh -s -- -y
+      source $HOME/.cargo/env
+      rustup update
+  - build: |
+      source $HOME/.cargo/env
+      cd tesla-rs
+      cargo build
