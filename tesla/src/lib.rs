@@ -12,6 +12,7 @@ const ENDPOINT_GET_VEHICLES: &str = "vehicles";
 const ENDPOINT_GET_VEHICLE: &str = "vehicles/{}";
 
 const VEHICLE_CHARGE_STATE: &str = "data_request/charge_state";
+const VEHICLE_GUI_SETTINGS: &str = "data_request/gui_settings";
 const VEHICLE_DATA: &str = "vehicle_data";
 const VEHICLE_COMMAND_WAKE: &str = "wake_up";
 
@@ -122,7 +123,15 @@ impl VehicleClient {
             .send()?
             .json()?;
 
-        println!("Resp: {:?}", resp);
+        Ok(resp.into_response())
+    }
+
+    pub fn get_gui_settings(&self) -> Result<GuiSettings, reqwest::Error> {
+        let url = endpoint_url!(self, VEHICLE_GUI_SETTINGS);
+
+        let resp: Response<GuiSettings> = self.tesla_client.client.get(url)
+            .send()?
+            .json()?;
 
         Ok(resp.into_response())
     }
