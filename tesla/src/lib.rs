@@ -9,6 +9,7 @@ mod models;
 
 const DEFAULT_BASE_URI: &str = "https://owner-api.teslamotors.com/api/1/";
 const ENDPOINT_GET_VEHICLES: &str = "vehicles";
+#[allow(dead_code)]
 const ENDPOINT_GET_VEHICLE: &str = "vehicles/{}";
 
 const VEHICLE_CHARGE_STATE: &str = "data_request/charge_state";
