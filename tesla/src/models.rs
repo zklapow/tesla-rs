@@ -14,19 +14,25 @@ pub struct Vehicle {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StateOfCharge {
+    pub battery_heater_on: bool,
     pub battery_level: u32,
     pub battery_range: f64,
     pub charge_current_request: u32,
     pub charge_current_request_max: u32,
-    pub ideal_battery_range: f64,
+    pub charger_power: u32,
+    pub charger_voltage: u32,
+    pub charging_state: String,
     pub est_battery_range: f64,
-    pub usable_battery_level: u32
+    pub ideal_battery_range: f64,
+    pub usable_battery_level: u32,
+    pub time_to_full_charge: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VehicleState {
     pub odometer: f64,
     pub sentry_mode: bool,
+    pub locked: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
