@@ -36,6 +36,14 @@ pub struct VehicleState {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct VehicleConfig {
+    pub car_type: String,
+    pub exterior_color: String,
+    pub wheel_type: String,
+    pub trim_badging: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct DriveState {
     pub gps_as_of: u64,
     pub heading: u32,
@@ -62,6 +70,7 @@ pub struct FullVehicleData {
     pub drive_state: DriveState,
     pub climate_state: ClimateState,
     pub gui_settings: GuiSettings,
+    pub vehicle_config: VehicleConfig,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
