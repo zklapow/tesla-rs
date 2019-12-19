@@ -61,6 +61,14 @@ pub struct FullVehicleData {
     pub vehicle_state: VehicleState,
     pub drive_state: DriveState,
     pub climate_state: ClimateState,
+    pub gui_settings: GuiSettings,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GuiSettings {
+    pub gui_charge_rate_units: String,
+    pub gui_distance_units: String,
+    pub gui_temperature_units: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
