@@ -9,12 +9,15 @@ mod models;
 
 const DEFAULT_BASE_URI: &str = "https://owner-api.teslamotors.com/api/1/";
 const ENDPOINT_GET_VEHICLES: &str = "vehicles";
+#[allow(dead_code)]
 const ENDPOINT_GET_VEHICLE: &str = "vehicles/{}";
 
 const VEHICLE_CHARGE_STATE: &str = "data_request/charge_state";
 const VEHICLE_GUI_SETTINGS: &str = "data_request/gui_settings";
 const VEHICLE_DATA: &str = "vehicle_data";
+
 const VEHICLE_COMMAND_WAKE: &str = "wake_up";
+const VEHICLE_COMMAND_FLASH: &str = "flash_lights";
 
 // We expect here because this is parsing a const and will not fail
 macro_rules! endpoint_url {
@@ -98,6 +101,16 @@ impl VehicleClient {
         Ok(resp.into_response())
     }
 
+    pub fn flash_lights(&self) -> Result<Vehicle, reqwest::Error> {
+        let url = self.get_command_url(VEHICLE_COMMAND_FLASH);
+
+        let resp: Response<Vehicle> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
     pub fn get(&self) -> Result<Vehicle, reqwest::Error> {
         let resp: Response<Vehicle> = self.tesla_client.client.get(self.get_base_url())
             .send()?
@@ -141,6 +154,14 @@ impl VehicleClient {
 
         self.tesla_client.api_root
             .join(vehicle_path.as_str())
+            .expect("invalide vehicle path")
+    }
+
+    fn get_command_url(&self, command: &str) -> url::Url {
+        let command_path = format!("vehicles/{}/command/{}", self.vehicle_id, command);
+
+        self.tesla_client.api_root
+            .join(command_path.as_str())
             .expect("invalide vehicle path")
     }
 }
