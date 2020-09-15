@@ -69,6 +69,10 @@ fn run() -> Result<(), ()> {
                 )
         )
         .subcommand(
+            SubCommand::with_name("get_all_data")
+                .about("gets all the data for the specified vehicle")
+        )
+        .subcommand(
             SubCommand::with_name("influx")
                 .about("Start the influxdb reporter")
                 .arg(
@@ -110,6 +114,8 @@ fn run() -> Result<(), ()> {
 
     if let Some(submatches) = matches.subcommand_matches("wake") {
         cmd_wake(submatches, vehicle_name, client.clone());
+    } else if let Some(_submatches) = matches.subcommand_matches("get_all_data") {
+        get_all_data(vehicle_name, client.clone());
     } else if let Some(_submatches) = matches.subcommand_matches("influx") {
         if cfg.influx.is_none() {
             error!("No influx configuration present, cannot start influx reporter!");
@@ -154,6 +160,19 @@ fn cmd_wake(matches: &ArgMatches, name: String, client: TeslaClient) {
 
                 sleep(sleep_dur_s);
             }
+        }
+    } else {
+        error!("Could not find vehicle named {}", name);
+    }
+}
+
+fn get_all_data(name: String, client: TeslaClient) {
+    if let Some(vehicle) = client.get_vehicle_by_name(name.as_str()).expect("Could not load vehicles") {
+        let vclient = client.vehicle(vehicle.id);
+        info!("getting all data");
+        match vclient.get_all_data() {
+            Ok(data) => info!("{:#?}", data),
+            Err(e) => error!("get data failed {:?}", e)
         }
     } else {
         error!("Could not find vehicle named {}", name);
