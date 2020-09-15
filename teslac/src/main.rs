@@ -110,7 +110,7 @@ fn run() -> Result<(), ()> {
 
     if let Some(submatches) = matches.subcommand_matches("wake") {
         cmd_wake(submatches, vehicle_name, client.clone());
-    } else if let Some(submatches) = matches.subcommand_matches("influx") {
+    } else if let Some(_submatches) = matches.subcommand_matches("influx") {
         if cfg.influx.is_none() {
             error!("No influx configuration present, cannot start influx reporter!");
             return Err(());
@@ -120,6 +120,8 @@ fn run() -> Result<(), ()> {
             error!("Error in influx reporter: {}", e);
             exit(1);
         }
+    } else {
+        println!("No command specified")
     }
 
     Ok(())

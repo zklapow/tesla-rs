@@ -3,8 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use influx_db_client::{InfluxClient, Point, Points, Precision, Value};
-use influx_db_client::Error as InfluxError;
+use influx_db_client::{InfluxClient, Point, Precision, Value};
 use snafu::ResultExt;
 
 use tesla::{TeslaClient, Vehicle, VehicleClient, StateOfCharge, VehicleState, ClimateState, DriveState};
