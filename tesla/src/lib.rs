@@ -18,6 +18,14 @@ const VEHICLE_DATA: &str = "vehicle_data";
 
 const VEHICLE_COMMAND_WAKE: &str = "wake_up";
 const VEHICLE_COMMAND_FLASH: &str = "flash_lights";
+const VEHICLE_COMMAND_DOOR_UNLOCK: &str = "door_unlock";
+const VEHICLE_COMMAND_DOOR_LOCK: &str = "door_lock";
+const VEHICLE_COMMAND_HONK_HORN: &str = "honk_horn";
+const VEHICLE_COMMAND_AUTO_CONDITIONING_START: &str = "auto_conditioning_start";
+const VEHICLE_COMMAND_AUTO_CONDITIONING_STOP: &str = "auto_conditioning_stop";
+const VEHICLE_COMMAND_REMOTE_START_DRIVE: &str = "remote_start_drive";
+const VEHICLE_COMMAND_CHARGE_PORT_DOOR_OPEN: &str = "charge_port_door_open";
+const VEHICLE_COMMAND_CHARGE_PORT_DOOR_CLOSE: &str = "charge_port_door_close";
 
 // We expect here because this is parsing a const and will not fail
 macro_rules! endpoint_url {
@@ -101,10 +109,90 @@ impl VehicleClient {
         Ok(resp.into_response())
     }
 
-    pub fn flash_lights(&self) -> Result<Vehicle, reqwest::Error> {
+    pub fn flash_lights(&self) -> Result<SimpleResponse, reqwest::Error> {
         let url = self.get_command_url(VEHICLE_COMMAND_FLASH);
 
-        let resp: Response<Vehicle> = self.tesla_client.client.post(url)
+        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn door_unlock(&self) -> Result<SimpleResponse, reqwest::Error> {
+        let url = self.get_command_url(VEHICLE_COMMAND_DOOR_UNLOCK);
+
+        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn door_lock(&self) -> Result<SimpleResponse, reqwest::Error> {
+        let url = self.get_command_url(VEHICLE_COMMAND_DOOR_LOCK);
+
+        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn honk_horn(&self) -> Result<SimpleResponse, reqwest::Error> {
+        let url = self.get_command_url(VEHICLE_COMMAND_HONK_HORN);
+
+        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn auto_conditioning_start(&self) -> Result<SimpleResponse, reqwest::Error> {
+        let url = self.get_command_url(VEHICLE_COMMAND_AUTO_CONDITIONING_START);
+
+        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn auto_conditioning_stop(&self) -> Result<SimpleResponse, reqwest::Error> {
+        let url = self.get_command_url(VEHICLE_COMMAND_AUTO_CONDITIONING_STOP);
+
+        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn remote_start_drive(&self) -> Result<SimpleResponse, reqwest::Error> {
+        let url = self.get_command_url(VEHICLE_COMMAND_REMOTE_START_DRIVE);
+        // TODO : Need to pass the password in the querystring
+        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn charge_port_door_open(&self) -> Result<SimpleResponse, reqwest::Error> {
+        let url = self.get_command_url(VEHICLE_COMMAND_CHARGE_PORT_DOOR_OPEN);
+
+        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
+            .send()?
+            .json()?;
+
+        Ok(resp.into_response())
+    }
+
+    pub fn charge_port_door_close(&self) -> Result<SimpleResponse, reqwest::Error> {
+        let url = self.get_command_url(VEHICLE_COMMAND_CHARGE_PORT_DOOR_CLOSE);
+
+        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
             .send()?
             .json()?;
 
@@ -154,7 +242,7 @@ impl VehicleClient {
 
         self.tesla_client.api_root
             .join(vehicle_path.as_str())
-            .expect("invalide vehicle path")
+            .expect("invalid vehicle path")
     }
 
     fn get_command_url(&self, command: &str) -> url::Url {
@@ -162,7 +250,7 @@ impl VehicleClient {
 
         self.tesla_client.api_root
             .join(command_path.as_str())
-            .expect("invalide vehicle path")
+            .expect("invalid vehicle path")
     }
 }
 

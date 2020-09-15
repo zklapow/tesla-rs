@@ -2,6 +2,12 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct SimpleResponse {
+    pub result: boolc,
+    pub reason: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Vehicle {
     pub id: u64,
     pub vehicle_id: u64,
