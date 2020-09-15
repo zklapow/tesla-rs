@@ -1,6 +1,6 @@
 [package]
 name = "teslac"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ze'ev Klapow <zklapow@gmail.com>"]
 edition = "2018"
 repository = "https://github.com/zklapow/tesla-rs"
@@ -9,7 +9,7 @@ categories = ["command-line-utilities"]
 license = "MIT"
 
 [dependencies]
-tesla = { path = "../tesla", version = "0.1"}
+tesla = { path = "../tesla", version = "0.2"}
 toml = "0.5"
 serde = "~1.0"
 dirs = "2.0"
