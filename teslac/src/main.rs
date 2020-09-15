@@ -70,7 +70,19 @@ fn run() -> Result<(), ()> {
         )
         .subcommand(
             SubCommand::with_name("get_all_data")
-                .about("gets all the data for the specified vehicle")
+                .about("get all the data for the specified vehicle")
+        )
+        .subcommand(
+            SubCommand::with_name("flash_lights")
+                .about("flash lights for the specified vehicle")
+        )
+        .subcommand(
+            SubCommand::with_name("door_unlock")
+                .about("unlock the doors for the specified vehicle")
+        )
+        .subcommand(
+            SubCommand::with_name("door_lock")
+                .about("lock the doors for the specified vehicle")
         )
         .subcommand(
             SubCommand::with_name("influx")
@@ -116,6 +128,12 @@ fn run() -> Result<(), ()> {
         cmd_wake(submatches, vehicle_name, client.clone());
     } else if let Some(_submatches) = matches.subcommand_matches("get_all_data") {
         get_all_data(vehicle_name, client.clone());
+    } else if let Some(_submatches) = matches.subcommand_matches("flash_lights") {
+        flash_lights(vehicle_name, client.clone());
+    } else if let Some(_submatches) = matches.subcommand_matches("door_unlock") {
+        door_unlock(vehicle_name, client.clone());
+    } else if let Some(_submatches) = matches.subcommand_matches("door_lock") {
+        door_lock(vehicle_name, client.clone());
     } else if let Some(_submatches) = matches.subcommand_matches("influx") {
         if cfg.influx.is_none() {
             error!("No influx configuration present, cannot start influx reporter!");
@@ -173,6 +191,45 @@ fn get_all_data(name: String, client: TeslaClient) {
         match vclient.get_all_data() {
             Ok(data) => info!("{:#?}", data),
             Err(e) => error!("get data failed {:?}", e)
+        }
+    } else {
+        error!("Could not find vehicle named {}", name);
+    }
+}
+
+fn flash_lights(name: String, client: TeslaClient) {
+    if let Some(vehicle) = client.get_vehicle_by_name(name.as_str()).expect("Could not load vehicles") {
+        let vclient = client.vehicle(vehicle.id);
+        info!("flashing lights");
+        match vclient.flash_lights() {
+            Ok(_) => info!("Success"),
+            Err(e) => error!("flashing lights failed {:?}", e)
+        }
+    } else {
+        error!("Could not find vehicle named {}", name);
+    }
+}
+
+fn door_unlock(name: String, client: TeslaClient) {
+    if let Some(vehicle) = client.get_vehicle_by_name(name.as_str()).expect("Could not load vehicles") {
+        let vclient = client.vehicle(vehicle.id);
+        info!("unlocking doors");
+        match vclient.door_unlock() {
+            Ok(_) => info!("Success"),
+            Err(e) => error!("unlocking doors failed {:?}", e)
+        }
+    } else {
+        error!("Could not find vehicle named {}", name);
+    }
+}
+
+fn door_lock(name: String, client: TeslaClient) {
+    if let Some(vehicle) = client.get_vehicle_by_name(name.as_str()).expect("Could not load vehicles") {
+        let vclient = client.vehicle(vehicle.id);
+        info!("locking doors");
+        match vclient.door_lock() {
+            Ok(_) => info!("Success"),
+            Err(e) => error!("locking doors failed {:?}", e)
         }
     } else {
         error!("Could not find vehicle named {}", name);
