@@ -32,7 +32,7 @@ fn run() -> Result<(), ()> {
     let matches = App::new("Tesla Control")
         .version("0.1.0")
         .author("Ze'ev Klapow <zklapow@gmail.com>")
-        .about("A command line interface for your tesla")
+        .about("A command line interface for your Tesla")
         .arg(
             Arg::with_name("config")
                 .short("c")
