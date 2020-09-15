@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SimpleResponse {
-    pub result: boolc,
+    pub result: bool,
     pub reason: String,
 }
 
