@@ -25,11 +25,17 @@ pub struct StateOfCharge {
     pub battery_range: f64,
     pub charge_current_request: u32,
     pub charge_current_request_max: u32,
+    pub charge_limit_soc: u32,
+    pub charge_port_door_open: bool,
+    pub charge_port_latch: String,
+    pub charge_rate: f64,
+    pub charger_actual_current: u32,
     pub charger_power: u32,
     pub charger_voltage: u32,
     pub charging_state: String,
     pub est_battery_range: f64,
     pub ideal_battery_range: f64,
+    pub minutes_to_full_charge: u32,
     pub usable_battery_level: u32,
     pub time_to_full_charge: f64,
 }
@@ -39,6 +45,20 @@ pub struct VehicleState {
     pub odometer: f64,
     pub sentry_mode: bool,
     pub locked: bool,
+    pub car_version: String,
+    // doors
+    pub df: u8,
+    pub dr: u8,
+    pub pf: u8,
+    pub pr: u8,
+    // windows
+    pub fd_window: u8,
+    pub fp_window: u8,
+    pub rd_window: u8,
+    pub rp_window: u8,
+    // front and rear trunk
+    pub ft: u8,
+    pub rt: u8,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -61,8 +81,18 @@ pub struct DriveState {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ClimateState {
+    pub battery_heater: bool,
+    pub defrost_mode: u8,
+    pub driver_temp_setting: f64,
     pub inside_temp: f64,
+    pub is_auto_conditioning_on: bool,
+    pub is_climate_on: bool,
+    pub is_front_defroster_on: bool,
+    pub is_rear_defroster_on: bool,
     pub outside_temp: f64,
+    pub passenger_temp_setting: f64,
+    pub seat_heater_left: u8,
+    pub seat_heater_right: u8,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
