@@ -42,6 +42,7 @@ pub struct StateOfCharge {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VehicleState {
+    pub api_version: i16,
     pub odometer: f64,
     pub sentry_mode: bool,
     pub locked: bool,
@@ -66,7 +67,7 @@ pub struct VehicleConfig {
     pub car_type: String,
     pub exterior_color: String,
     pub wheel_type: String,
-    pub trim_badging: Option<String>,
+    pub trim_badging: Option<String>, // TODO : This appears to not exist (anymore?). Consider removing it.
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -76,7 +77,9 @@ pub struct DriveState {
     pub latitude: f64,
     pub longitude: f64,
     pub power: f64,
-    pub timestamp: u64
+    pub timestamp: u64,
+    pub shift_state: Option<String>,
+    pub speed: Option<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -88,9 +91,11 @@ pub struct ClimateState {
     pub is_auto_conditioning_on: bool,
     pub is_climate_on: bool,
     pub is_front_defroster_on: bool,
+    pub is_preconditioning: bool,
     pub is_rear_defroster_on: bool,
     pub outside_temp: f64,
     pub passenger_temp_setting: f64,
+    pub remote_heater_control_enabled: bool,
     pub seat_heater_left: u8,
     pub seat_heater_right: u8,
 }
