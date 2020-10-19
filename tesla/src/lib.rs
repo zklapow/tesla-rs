@@ -1,4 +1,4 @@
-use reqwest::Client;
+use reqwest::blocking::Client;
 use reqwest::header;
 
 pub use reqwest;
@@ -36,7 +36,7 @@ macro_rules! endpoint_url {
 
 #[derive(Clone)]
 pub struct TeslaClient {
-    pub api_root: url::Url,
+    pub api_root: reqwest::Url,
     client: Client,
 }
 
@@ -58,7 +58,7 @@ impl TeslaClient {
 
         headers.insert(header::AUTHORIZATION, auth_value);
 
-        let client = reqwest::Client::builder()
+        let client = Client::builder()
             .default_headers(headers)
             .build()
             .expect("Could not create client");
@@ -93,7 +93,7 @@ impl TeslaClient {
         Ok(vehicle)
     }
 
-    fn get_base_url(&self) -> url::Url {
+    fn get_base_url(&self) -> reqwest::Url {
         self.api_root.clone()
     }
 }
@@ -237,7 +237,7 @@ impl VehicleClient {
         Ok(resp.into_response())
     }
 
-    fn get_base_url(&self) -> url::Url {
+    fn get_base_url(&self) -> reqwest::Url {
         let vehicle_path = format!("vehicles/{}/", self.vehicle_id);
 
         self.tesla_client.api_root
@@ -245,7 +245,7 @@ impl VehicleClient {
             .expect("invalid vehicle path")
     }
 
-    fn get_command_url(&self, command: &str) -> url::Url {
+    fn get_command_url(&self, command: &str) -> reqwest::Url {
         let command_path = format!("vehicles/{}/command/{}", self.vehicle_id, command);
 
         self.tesla_client.api_root
