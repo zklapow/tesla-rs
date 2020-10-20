@@ -1,21 +1,23 @@
 #[macro_use]
-extern crate log;
-#[macro_use]
 extern crate influx_db_client;
+#[macro_use]
+extern crate log;
+extern crate rpassword;
 
 use std::fs;
 use std::path::PathBuf;
+use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
+use std::io::{stdin, stdout, Write};
 
 use clap::{App, Arg, ArgMatches, SubCommand};
 use dirs::home_dir;
 
-use tesla::{TeslaClient};
+use tesla::TeslaClient;
 
 use crate::config::Config;
 use crate::influx::run_influx_reporter;
-use std::process::exit;
 
 mod config;
 mod influx;
@@ -40,6 +42,13 @@ fn run() -> Result<(), ()> {
                 .value_name("FILE")
                 .help("Sets a custom config file path")
                 .takes_value(true)
+        )
+        .arg(
+            Arg::with_name("oauth")
+                .short("o")
+                .long("oauth")
+                .help("Performs authentication with the Tesla servers using the prompted email address and password. Returns an oauth token when successful.")
+                .takes_value(false)
         )
         .arg(
             Arg::with_name("vehicle")
@@ -96,6 +105,24 @@ fn run() -> Result<(), ()> {
                 )
         )
         .get_matches();
+
+    if matches.is_present("oauth") {
+        let mut email = String::new();
+        print!("Please enter your email: ");
+        let _ = stdout().flush();
+        stdin().read_line(&mut email).expect("Did not enter a correct string");
+        email = email.replace("\n", "").replace("\r", "");
+
+        let password = rpassword::prompt_password_stdout("Password: ").unwrap();
+        let token = TeslaClient::authenticate(email, password);
+        return if token.is_ok() {
+            println!("Your token is: {}", token.unwrap());
+            Ok(())
+        } else {
+            println!("Token error: {}", token.err().unwrap());
+            Err(())
+        }
+    }
 
     let config_path_default = home_dir()
         .unwrap_or(PathBuf::from("/"))

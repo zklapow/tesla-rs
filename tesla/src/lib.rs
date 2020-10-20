@@ -1,7 +1,10 @@
-use reqwest::blocking::Client;
-use reqwest::header;
+use std::collections::HashMap;
+
+use serde::{Serialize, Deserialize};
 
 pub use reqwest;
+use reqwest::blocking::Client;
+use reqwest::header;
 
 pub use models::*;
 
@@ -47,6 +50,42 @@ pub struct VehicleClient {
 }
 
 impl TeslaClient {
+    pub fn authenticate(email: String, password: String) -> Result<String, String> {
+        let root_url = reqwest::Url::parse(DEFAULT_BASE_URI).expect("Could not parse API root");
+        let url = root_url.join("/oauth/token").expect("Could not parse API endpoint");
+        let mut map = HashMap::new();
+        map.insert("grant_type", "password");
+        map.insert("client_id", "81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384");
+        map.insert("client_secret", "c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3");
+        map.insert("email", email.as_str());
+        map.insert("password", password.as_str());
+        let client = Client::new();
+
+        #[derive(Serialize, Deserialize, Debug)]
+        struct AuthResponse {
+            response: Option<String>,
+            access_token: Option<String>,
+            token_type: Option<String>,
+            expires_in: Option<i32>,
+            created_at: Option<i32>,
+            refresh_token: Option<String>,
+        }
+
+        let resp: AuthResponse = client.post(url)
+            .json(&map)
+            .send().unwrap()
+            .json().unwrap();
+        return if resp.access_token.is_some() {
+            let expires_in = resp.expires_in.unwrap();
+            let expires_in_days = expires_in / 60 / 60 / 24;
+            println!("The access token will expire in {} days", expires_in_days);
+            Ok(resp.access_token.unwrap())
+        } else {
+            let error_response = resp.response.unwrap_or(String::from("unknown reason"));
+            Err(format!("Did not get an access token because of {}", error_response))
+        }
+    }
+
     pub fn default(access_token: &str) -> TeslaClient {
         TeslaClient::new(DEFAULT_BASE_URI, access_token)
     }
@@ -72,7 +111,7 @@ impl TeslaClient {
     pub fn vehicle(&self, vehicle_id: u64) -> VehicleClient {
         VehicleClient {
             tesla_client: self.clone(),
-            vehicle_id
+            vehicle_id,
         }
     }
 
@@ -110,92 +149,51 @@ impl VehicleClient {
     }
 
     pub fn flash_lights(&self) -> Result<SimpleResponse, reqwest::Error> {
-        let url = self.get_command_url(VEHICLE_COMMAND_FLASH);
-
-        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
-            .send()?
-            .json()?;
-
-        Ok(resp.into_response())
+        self.post_simple_command(VEHICLE_COMMAND_FLASH)
     }
 
     pub fn door_unlock(&self) -> Result<SimpleResponse, reqwest::Error> {
-        let url = self.get_command_url(VEHICLE_COMMAND_DOOR_UNLOCK);
-
-        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
-            .send()?
-            .json()?;
-
-        Ok(resp.into_response())
+        self.post_simple_command(VEHICLE_COMMAND_DOOR_UNLOCK)
     }
 
     pub fn door_lock(&self) -> Result<SimpleResponse, reqwest::Error> {
-        let url = self.get_command_url(VEHICLE_COMMAND_DOOR_LOCK);
-
-        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
-            .send()?
-            .json()?;
-
-        Ok(resp.into_response())
+        self.post_simple_command(VEHICLE_COMMAND_DOOR_LOCK)
     }
 
     pub fn honk_horn(&self) -> Result<SimpleResponse, reqwest::Error> {
-        let url = self.get_command_url(VEHICLE_COMMAND_HONK_HORN);
-
-        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
-            .send()?
-            .json()?;
-
-        Ok(resp.into_response())
+        self.post_simple_command(VEHICLE_COMMAND_HONK_HORN)
     }
 
     pub fn auto_conditioning_start(&self) -> Result<SimpleResponse, reqwest::Error> {
-        let url = self.get_command_url(VEHICLE_COMMAND_AUTO_CONDITIONING_START);
-
-        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
-            .send()?
-            .json()?;
-
-        Ok(resp.into_response())
+        self.post_simple_command(VEHICLE_COMMAND_AUTO_CONDITIONING_START)
     }
 
     pub fn auto_conditioning_stop(&self) -> Result<SimpleResponse, reqwest::Error> {
-        let url = self.get_command_url(VEHICLE_COMMAND_AUTO_CONDITIONING_STOP);
-
-        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
-            .send()?
-            .json()?;
-
-        Ok(resp.into_response())
+        self.post_simple_command(VEHICLE_COMMAND_AUTO_CONDITIONING_STOP)
     }
 
     pub fn remote_start_drive(&self) -> Result<SimpleResponse, reqwest::Error> {
-        let url = self.get_command_url(VEHICLE_COMMAND_REMOTE_START_DRIVE);
         // TODO : Need to pass the password in the querystring
+        let url = self.get_command_url(VEHICLE_COMMAND_REMOTE_START_DRIVE);
         let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
             .send()?
             .json()?;
-
         Ok(resp.into_response())
     }
 
     pub fn charge_port_door_open(&self) -> Result<SimpleResponse, reqwest::Error> {
-        let url = self.get_command_url(VEHICLE_COMMAND_CHARGE_PORT_DOOR_OPEN);
-
-        let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
-            .send()?
-            .json()?;
-
-        Ok(resp.into_response())
+        self.post_simple_command(VEHICLE_COMMAND_CHARGE_PORT_DOOR_OPEN)
     }
 
     pub fn charge_port_door_close(&self) -> Result<SimpleResponse, reqwest::Error> {
-        let url = self.get_command_url(VEHICLE_COMMAND_CHARGE_PORT_DOOR_CLOSE);
+        self.post_simple_command(VEHICLE_COMMAND_CHARGE_PORT_DOOR_CLOSE)
+    }
 
+    fn post_simple_command(&self, command: &str) -> Result<SimpleResponse, reqwest::Error> {
+        let url = self.get_command_url(command);
         let resp: Response<SimpleResponse> = self.tesla_client.client.post(url)
             .send()?
             .json()?;
-
         Ok(resp.into_response())
     }
 
