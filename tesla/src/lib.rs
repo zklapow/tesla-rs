@@ -55,6 +55,7 @@ impl TeslaClient {
         let url = root_url.join("/oauth/token").expect("Could not parse API endpoint");
         let mut map = HashMap::new();
         map.insert("grant_type", "password");
+        // Use client_id and client_secret obtained from Android/iOS app. These are not the user's api key.
         map.insert("client_id", "81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384");
         map.insert("client_secret", "c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3");
         map.insert("email", email.as_str());
