@@ -6,6 +6,5 @@ Built using the documentation available from :
 
 ## TODO : 
 - Optimisations and simplification
-- Authentication route 
 - Option to use the "async" calls provided by reqwest 0.10
-- Tests
+- Tests ?
