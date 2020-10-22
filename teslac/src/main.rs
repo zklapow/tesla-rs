@@ -114,7 +114,7 @@ fn run() -> Result<(), ()> {
         email = email.replace("\n", "").replace("\r", "");
 
         let password = rpassword::prompt_password_stdout("Password: ").unwrap();
-        let token = TeslaClient::authenticate(email, password);
+        let token = TeslaClient::authenticate(email.as_str(), password.as_str());
         return if token.is_ok() {
             println!("Your token is: {}", token.unwrap());
             Ok(())

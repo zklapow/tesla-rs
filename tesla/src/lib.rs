@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use serde::{Serialize, Deserialize};
-
 pub use reqwest;
 use reqwest::blocking::Client;
 use reqwest::header;
@@ -50,32 +48,10 @@ pub struct VehicleClient {
 }
 
 impl TeslaClient {
-    pub fn authenticate(email: String, password: String) -> Result<String, String> {
-        let root_url = reqwest::Url::parse(DEFAULT_BASE_URI).expect("Could not parse API root");
-        let url = root_url.join("/oauth/token").expect("Could not parse API endpoint");
-        let mut map = HashMap::new();
-        map.insert("grant_type", "password");
-        // Use client_id and client_secret obtained from Android/iOS app. These are not the user's api key.
-        map.insert("client_id", "81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384");
-        map.insert("client_secret", "c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3");
-        map.insert("email", email.as_str());
-        map.insert("password", password.as_str());
-        let client = Client::new();
+    pub fn authenticate(email: &str, password: &str) -> Result<String, String> {
+        let map = TeslaClient::get_auth_params(email, password);
+        let resp = TeslaClient::call_auth_route(map);
 
-        #[derive(Serialize, Deserialize, Debug)]
-        struct AuthResponse {
-            response: Option<String>,
-            access_token: Option<String>,
-            token_type: Option<String>,
-            expires_in: Option<i32>,
-            created_at: Option<i32>,
-            refresh_token: Option<String>,
-        }
-
-        let resp: AuthResponse = client.post(url)
-            .json(&map)
-            .send().unwrap()
-            .json().unwrap();
         return if resp.access_token.is_some() {
             let expires_in = resp.expires_in.unwrap();
             let expires_in_days = expires_in / 60 / 60 / 24;
@@ -85,6 +61,27 @@ impl TeslaClient {
             let error_response = resp.response.unwrap_or(String::from("unknown reason"));
             Err(format!("Did not get an access token because of {}", error_response))
         }
+    }
+
+    fn get_auth_params<'a>(email: &'a str, password: &'a str) -> HashMap<&'a str, &'a str> {
+        let mut map = HashMap::new();
+        map.insert("grant_type", "password");
+        // Use client_id and client_secret obtained from Android/iOS app. These are not the user's api key.
+        map.insert("client_id", "81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384");
+        map.insert("client_secret", "c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3");
+        map.insert("email", email);
+        map.insert("password", password);
+        map
+    }
+
+    fn call_auth_route(params_map: HashMap<&str, &str>) -> AuthResponse {
+        let root_url = reqwest::Url::parse(DEFAULT_BASE_URI).expect("Could not parse API root");
+        let url = root_url.join("/oauth/token").expect("Could not parse API endpoint");
+        let client = Client::new();
+        client.post(url)
+            .json(&params_map)
+            .send().unwrap()
+            .json().unwrap()
     }
 
     pub fn default(access_token: &str) -> TeslaClient {

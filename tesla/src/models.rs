@@ -121,6 +121,16 @@ pub struct GuiSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct AuthResponse {
+    pub response: Option<String>,
+    pub access_token: Option<String>,
+    pub token_type: Option<String>,
+    pub expires_in: Option<i32>,
+    pub created_at: Option<i32>,
+    pub refresh_token: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ResponseArray<T> {
     response: Vec<T>,
     count: u32
