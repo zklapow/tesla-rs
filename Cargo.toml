@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+  "fake_server",
   "tesla",
   "teslac"
 ]

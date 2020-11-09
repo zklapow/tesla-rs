@@ -1,2 +1,3 @@
 - [Tesla lib](./tesla)
 - [Tesla command line utility / example app](./teslac)
+- [Tesla fake server (used for testing or demo mode)](./fake_server)

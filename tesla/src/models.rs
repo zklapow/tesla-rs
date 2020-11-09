@@ -122,12 +122,11 @@ pub struct GuiSettings {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthResponse {
-    pub response: Option<String>,
-    pub access_token: Option<String>,
-    pub token_type: Option<String>,
-    pub expires_in: Option<i32>,
-    pub created_at: Option<i32>,
-    pub refresh_token: Option<String>,
+    pub access_token: String,
+    pub token_type: String,
+    pub expires_in: i32,
+    pub created_at: i32,
+    pub refresh_token: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

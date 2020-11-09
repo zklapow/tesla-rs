@@ -1,7 +1,7 @@
 use snafu::{Snafu};
 
 use influx_db_client;
-use tesla::reqwest::Error as TeslaError;
+use tesla::TeslaError;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub(crate)")]

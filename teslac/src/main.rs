@@ -36,6 +36,14 @@ fn run() -> Result<(), ()> {
         .author("Ze'ev Klapow <zklapow@gmail.com>")
         .about("A command line interface for your Tesla")
         .arg(
+            Arg::with_name("debug-server")
+                .short("d")
+                .long("debug-server")
+                .value_name("URL")
+                .help("Provide a debug server (ex : http://localhost:4321/api/1/) to use instead of the official one from Tesla. Can be used to test/use the lib without having a valid Tesla account.")
+                .takes_value(true)
+        )
+        .arg(
             Arg::with_name("config")
                 .short("c")
                 .long("config")
@@ -106,6 +114,11 @@ fn run() -> Result<(), ()> {
         )
         .get_matches();
 
+    let debug_server = matches.value_of("debug-server");
+    if debug_server.is_some() {
+        println!("Using the debug server : {}", debug_server.unwrap());
+    }
+
     if matches.is_present("oauth") {
         let mut email = String::new();
         print!("Please enter your email: ");
@@ -114,7 +127,11 @@ fn run() -> Result<(), ()> {
         email = email.replace("\n", "").replace("\r", "");
 
         let password = rpassword::prompt_password_stdout("Password: ").unwrap();
-        let token = TeslaClient::authenticate(email.as_str(), password.as_str());
+        let token = if debug_server.is_some() {
+            TeslaClient::authenticate_using_api_root(debug_server.unwrap(), email.as_str(), password.as_str())
+        } else {
+            TeslaClient::authenticate(email.as_str(), password.as_str())
+        };
         return if token.is_ok() {
             println!("Your token is: {}", token.unwrap());
             Ok(())
@@ -134,7 +151,12 @@ fn run() -> Result<(), ()> {
 
     let config_data = fs::read_to_string(config_path).expect("Cannot read config");
     let cfg: Config = toml::from_str(config_data.as_str()).expect("Cannot parse config");
-    let client = TeslaClient::default(cfg.global.api_token.as_str());
+
+    let client = if debug_server.is_some() {
+        TeslaClient::new(debug_server.unwrap(), cfg.global.api_token.as_str())
+    } else {
+        TeslaClient::default(cfg.global.api_token.as_str())
+    };
 
     flexi_logger::Logger::with_env_or_str(cfg.global.logspec.unwrap_or("".to_owned()))
         .format(flexi_logger::colored_with_thread)
