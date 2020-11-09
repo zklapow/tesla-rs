@@ -30,6 +30,16 @@ fn handle_connection(mut stream: TcpStream) {
 
     println!("method '{}', url '{}'", method, url);
 
+    let dummy_vehicle = Vehicle {
+        id: 0,
+        vehicle_id: 0,
+        vin: "ABC1234567890".to_string(),
+        display_name: "Tom Morello".to_string(),
+        state: "online".to_string(),
+        id_s: "".to_string(),
+        tokens: vec![]
+    };
+
     let mut status_line = "HTTP/1.1 200 OK";
     let mut contents = String::new();
     if method == "POST" && Regex::new(r"^/oauth/token$").unwrap().is_match(url) {
@@ -42,17 +52,10 @@ fn handle_connection(mut stream: TcpStream) {
         };
         contents = serde_json::to_string(&auth_response).unwrap();
     } else if method == "GET" && Regex::new(r"^/api/\d+/vehicles$").unwrap().is_match(url) {
-        let vehicle = Vehicle {
-            id: 0,
-            vehicle_id: 0,
-            vin: "ABC1234567890".to_string(),
-            display_name: "TEST CAR".to_string(),
-            state: "".to_string(),
-            id_s: "".to_string(),
-            tokens: vec![]
-        };
-        let vehicles = vec![vehicle];
+        let vehicles = vec![dummy_vehicle];
         contents = format!("{{ \"response\" : {}, \"count\": {} }}", serde_json::to_string(&vehicles).unwrap(), vehicles.len());
+    } else if method == "GET" && Regex::new(r"^/api/\d+/vehicles/\d+/$").unwrap().is_match(url) {
+        contents = format!("{{ \"response\" : {} }}", serde_json::to_string(&dummy_vehicle).unwrap());
     } else if method == "GET" && Regex::new(r"^/api/\d+/vehicles/\d+/vehicle_data$").unwrap().is_match(url) {
         let full_vehicle_data = FullVehicleData {
             id: 0,
@@ -61,8 +64,8 @@ fn handle_connection(mut stream: TcpStream) {
             state: "Driving".to_string(),
             charge_state: StateOfCharge {
                 battery_heater_on: false,
-                battery_level: 0,
-                battery_range: 0.0,
+                battery_level: 50,
+                battery_range: 120.12,
                 charge_current_request: 0,
                 charge_current_request_max: 0,
                 charge_limit_soc: 0,
@@ -81,9 +84,9 @@ fn handle_connection(mut stream: TcpStream) {
             },
             vehicle_state: VehicleState {
                 api_version: 0,
-                odometer: 0.0,
+                odometer: 23456.0,
                 sentry_mode: false,
-                locked: false,
+                locked: true,
                 car_version: "".to_string(),
                 df: 0,
                 dr: 0,
@@ -110,27 +113,27 @@ fn handle_connection(mut stream: TcpStream) {
                 battery_heater: false,
                 defrost_mode: 0,
                 driver_temp_setting: 0.0,
-                inside_temp: 0.0,
+                inside_temp: 15.0,
                 is_auto_conditioning_on: false,
                 is_climate_on: false,
                 is_front_defroster_on: false,
                 is_preconditioning: false,
                 is_rear_defroster_on: false,
-                outside_temp: 0.0,
+                outside_temp: 10.0,
                 passenger_temp_setting: 0.0,
                 remote_heater_control_enabled: false,
                 seat_heater_left: 0,
                 seat_heater_right: 0
             },
             gui_settings: GuiSettings {
-                gui_charge_rate_units: "".to_string(),
-                gui_distance_units: "".to_string(),
-                gui_temperature_units: "".to_string()
+                gui_charge_rate_units: "km/hr".to_string(),
+                gui_distance_units: "km/hr".to_string(),
+                gui_temperature_units: "C".to_string(),
             },
             vehicle_config: VehicleConfig {
-                car_type: "".to_string(),
-                exterior_color: "".to_string(),
-                wheel_type: "".to_string(),
+                car_type: "model3".to_string(),
+                exterior_color: "DeepBlue".to_string(),
+                wheel_type: "Pinwheel18".to_string(),
                 trim_badging: None
             }
         };
