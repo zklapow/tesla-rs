@@ -141,16 +141,7 @@ fn run() -> Result<(), ()> {
         }
     }
 
-    let config_path_default = home_dir()
-        .unwrap_or(PathBuf::from("/"))
-        .join(".teslac");
-
-    let config_path = matches.value_of("config")
-        .map(|p| PathBuf::from(p))
-        .unwrap_or(config_path_default);
-
-    let config_data = fs::read_to_string(config_path).expect("Cannot read config");
-    let cfg: Config = toml::from_str(config_data.as_str()).expect("Cannot parse config");
+    let cfg = get_config(matches.value_of("config"), debug_server.is_some());
 
     let client = if debug_server.is_some() {
         TeslaClient::new(debug_server.unwrap(), cfg.global.api_token.as_str())
@@ -198,6 +189,32 @@ fn run() -> Result<(), ()> {
     }
 
     Ok(())
+}
+
+fn get_config(alternate_config_file_path: Option<&str>, has_debug_server: bool) -> Config {
+    let config_path_default = home_dir()
+        .unwrap_or(PathBuf::from("/"))
+        .join(".teslac");
+
+    let config_path = alternate_config_file_path
+        .map(|p| PathBuf::from(p))
+        .unwrap_or(config_path_default);
+
+    // provide a default config if using the debug server
+    let config_data = if has_debug_server {
+        fs::read_to_string(config_path).unwrap_or_else(|_| -> String {
+            let mut default_config_content :String = String::new();
+            default_config_content.push_str("[global]\n");
+            default_config_content.push_str("api_token = \"abcdefghijklmnop1234567890\"\n");
+            default_config_content.push_str("logspec = \"info\"\n");
+            default_config_content.push_str("default_vehicle = \"Test CAR\"\n");
+            default_config_content
+        })
+    } else {
+        fs::read_to_string(config_path).expect("Cannot read config")
+    };
+    let cfg: Config = toml::from_str(config_data.as_str()).expect("Cannot parse config");
+    cfg
 }
 
 fn cmd_wake(matches: &ArgMatches, name: String, client: TeslaClient) {

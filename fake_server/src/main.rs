@@ -9,8 +9,12 @@ use regex::Regex;
 use tesla::*;
 
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:4321").unwrap();
+    let bind_address = "127.0.0.1";
+    let bind_port = 4321;
+    let listen_address = format!("{}:{}", bind_address, bind_port);
+    let listener = TcpListener::bind(&listen_address).unwrap();
 
+    println!("Fake server is now listening for requests on {}", listen_address);
     for stream in listener.incoming() {
         let stream = stream.unwrap();
 
@@ -34,7 +38,7 @@ fn handle_connection(mut stream: TcpStream) {
         id: 0,
         vehicle_id: 0,
         vin: "ABC1234567890".to_string(),
-        display_name: "Tom Morello".to_string(),
+        display_name: "Test CAR".to_string(),
         state: "online".to_string(),
         id_s: "".to_string(),
         tokens: vec![]
@@ -51,6 +55,8 @@ fn handle_connection(mut stream: TcpStream) {
             refresh_token: "".to_string()
         };
         contents = serde_json::to_string(&auth_response).unwrap();
+    } else if method == "POST" && Regex::new(r"^/api/\d+/vehicles/\d+/wake_up$").unwrap().is_match(url) {
+        contents = format!("{{ \"response\" : {} }}", serde_json::to_string(&dummy_vehicle).unwrap());
     } else if method == "GET" && Regex::new(r"^/api/\d+/vehicles$").unwrap().is_match(url) {
         let vehicles = vec![dummy_vehicle];
         contents = format!("{{ \"response\" : {}, \"count\": {} }}", serde_json::to_string(&vehicles).unwrap(), vehicles.len());
@@ -139,7 +145,7 @@ fn handle_connection(mut stream: TcpStream) {
         };
         contents = format!("{{ \"response\" : {} }}", serde_json::to_string(&full_vehicle_data).unwrap());
     } else {
-        println!("No route found for {}", http_content);
+        println!("No route found for {} {}", method, url);
         status_line = "HTTP/1.1 404 NOT FOUND";
     };
 
