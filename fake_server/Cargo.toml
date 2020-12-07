@@ -1,0 +1,15 @@
+[package]
+name = "fake_server"
+version = "0.1.0"
+authors = ["Cédric Taschereau <cedric.taschereau@gmail.com>"]
+edition = "2018"
+repository = "https://github.com/zklapow/tesla-rs"
+keywords = ["tesla", "api"]
+license = "MIT"
+
+[dependencies]
+tesla = { path = "../tesla", version = "0.2"}
+toml = "0.5"
+serde = "~1.0"
+serde_json = "1.0"
+regex = "1"
